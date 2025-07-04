@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
+
     </head>
 <body>
     <div class="container">
@@ -23,7 +23,7 @@
                     <i class="fas fa-home"></i>
                     <span>Home</span>
                 </a>
-              
+
                 <a href="{{ url_for('profile') }}" class="nav-btn">
                     <i class="fas fa-user-circle"></i>
                     <span>Profile</span>
@@ -50,25 +50,24 @@
                         <i class="fas fa-edit"></i>
                         <span>Start Over</span>
                     </a>
-                    <form action="{{ url_for('save_itinerary') }}" method="POST" style="display: inline;">
-                        <button type="submit" class="btn btn-primary" id="save-itinerary-btn">
-                            <i class="fas fa-save"></i>
-                            <span>Save Itinerary</span>
-                        </button>
-                    </form>
+                    <button type="button" class="btn btn-primary" id="save-itinerary-btn">
+                        <i class="fas fa-save"></i>
+                        <span>Save Itinerary</span>
+                    </button>
+
                     <button id="toggle-traffic-btn" class="btn btn-secondary">
                         <i class="fas fa-traffic-light"></i>
                         <span>Hide Traffic</span>
                     </button>
                     <a class="btn btn-secondary" href="{{ url_for('directions') }}?lat={{ lat }}&lng={{ lng }}&name={{ place }}">
-    <i class="fas fa-route"></i>
-    <span>View Route Overview</span>
-</a>
+                        <i class="fas fa-route"></i>
+                        <span>View Route Overview</span>
+                    </a>
 
 
                 </div>
             </div>
-            
+
 
             <div class="itinerary-content">
                 <div class="map-wrapper animate__animated animate__fadeIn animate__delay-1s">
@@ -112,7 +111,7 @@
                         {% for day, spots in itinerary.items() %}
                         <div class="day-content {% if loop.first %}active{% endif %}" id="{{ day|replace(' ', '-')|lower }}">
                             <h2>{{ day }} in {{ place }}</h2>
-                            
+
                             <ul class="places-list">
                                 {% for spot in spots %}
                                 <li class="place-card animate__animated animate__fadeInUp" data-location="{{ spot.location.lat }},{{ spot.location.lng }}" data-name="{{ spot.name }}">
@@ -230,7 +229,7 @@
         };
 
         // Global variable to store the last visited place's coordinates for directions
-        let lastVisitedPlaceCoords = { lat: {{ lat }}, lng: {{ lng }} }; 
+        let lastVisitedPlaceCoords = { lat: {{ lat }}, lng: {{ lng }} };
 
         function initMap() {
             const cityCenter = { lat: {{ lat }}, lng: {{ lng }} };
@@ -337,17 +336,17 @@
                 {% for place in places_on_day %}
                     addMarker(
                         {
-                            lat: {{ place.location.lat }}, 
+                            lat: {{ place.location.lat }},
                             lng: {{ place.location.lng }}
-                        }, 
-                        "{{ place.name }}", 
-                        "{{ place.address }}", 
+                        },
+                        "{{ place.name }}",
+                        "{{ place.address }}",
                         {{ place.rating|default(0)|float }},
                         "{{ day }}"
                     );
                 {% endfor %}
             {% endfor %}
-            
+
             // Set bounds to include all markers
             if (markers.length > 0) {
                 const bounds = new google.maps.LatLngBounds();
@@ -364,7 +363,7 @@
 
         function addMarker(position, name, address, rating, day) {
             const markerColor = markerColors[day] || markerColors.default;
-            
+
             const marker = new google.maps.Marker({
                 position: position,
                 map: map,
@@ -401,12 +400,12 @@
                 }
                 infoWindow.open(map, marker);
                 activeInfoWindow = infoWindow;
-                
+
                 marker.setAnimation(google.maps.Animation.BOUNCE);
                 setTimeout(() => {
                     marker.setAnimation(null);
                 }, 750);
-                
+
                 const placeCards = document.querySelectorAll('.place-card');
                 placeCards.forEach(card => {
                     card.classList.remove('highlighted');
@@ -416,7 +415,7 @@
                     }
                 });
             });
-            
+
             markers.push(marker);
             return marker;
         }
@@ -430,7 +429,7 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const weatherData = await response.json();
-                
+
                 if (weatherData.error) {
                     weatherDisplay.innerHTML = `<p style="color: red;">${weatherData.error}</p>`;
                     return;
@@ -530,11 +529,11 @@
             button.addEventListener('click', () => {
                 document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
                 document.querySelectorAll('.day-content').forEach(content => content.classList.remove('active'));
-                
+
                 button.classList.add('active');
                 const day = button.getAttribute('data-day');
                 document.getElementById(day.replace(' ', '-').toLowerCase()).classList.add('active');
-                
+
                 markers.forEach(marker => {
                     if (marker.day === day) {
                         marker.setAnimation(google.maps.Animation.BOUNCE);
@@ -545,18 +544,18 @@
                 });
             });
         });
-        
+
         // Show on map button functionality
         document.querySelectorAll('.highlight-on-map').forEach(button => {
             button.addEventListener('click', function() {
                 const lat = parseFloat(this.getAttribute('data-lat'));
                 const lng = parseFloat(this.getAttribute('data-lng'));
                 const name = this.getAttribute('data-name');
-                
+
                 const position = new google.maps.LatLng(lat, lng);
                 map.panTo(position);
                 map.setZoom(16);
-                
+
                 markers.forEach(marker => {
                     if (marker.getTitle() === name) {
                         google.maps.event.trigger(marker, 'click');
@@ -564,34 +563,60 @@
                 });
             });
         });
-        
+
         // Save Itinerary functionality
-        document.getElementById('save-itinerary-btn').addEventListener('click', async function() {
+        // Added 'event' parameter and event.preventDefault()
+        document.getElementById('save-itinerary-btn').addEventListener('click', async function(event) {
+            event.preventDefault(); // Prevent the default form submission
+
+            // Optional: Disable button to prevent multiple clicks
+            const saveBtn = this;
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Saving...</span>';
+
             try {
                 const response = await fetch('{{ url_for('save_itinerary') }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
+                    // No body needed if the backend is retrieving data from session
+                    // If your backend needs specific data from the frontend, add a body here
+                    // body: JSON.stringify({
+                    //     city: '{{ place }}',
+                    //     days: {{ days }},
+                    //     budget: '{{ budget }}', // Assuming budget is passed to template
+                    //     group_type: '{{ group_type }}', // Assuming group_type is passed to template
+                    //     itinerary_data: JSON.stringify({{ itinerary | tojson }})
+                    // })
                 });
-                const data = await response.json();
-                if (data.success) {
-                    alert('Itinerary saved!');
-                    window.location.href = '{{ url_for('profile') }}';
+
+                if (response.ok) {
+                    // Assuming your Flask backend always returns a redirect or flash message
+                    // and not necessarily a JSON success status for this POST.
+                    // The flask code for save_itinerary simply redirects.
+                    window.location.href = '{{ url_for('profile') }}'; // Redirect after successful save
                 } else {
-                    alert('Failed to save itinerary: ' + (data.message || 'Unknown error'));
+                    // Handle potential errors if Flask returns an error status (e.g., 400, 500)
+                    const errorData = await response.json(); // Try to parse JSON for error message
+                    alert('Failed to save itinerary: ' + (errorData.message || response.statusText));
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> <span>Save Itinerary</span>';
                 }
             } catch (error) {
                 console.error('Error saving itinerary:', error);
                 alert('An error occurred while saving the itinerary.');
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> <span>Save Itinerary</span>';
             }
         });
-        
+
+
         // Print functionality
         document.getElementById('print-btn').addEventListener('click', function() {
             window.print();
         });
-        
+
         // Theme toggle
         document.getElementById('theme-toggle').addEventListener('change', function() {
             document.body.classList.toggle('light-theme');
