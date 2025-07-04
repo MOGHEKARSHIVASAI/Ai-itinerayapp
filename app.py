@@ -7,6 +7,9 @@ import json
 import requests # Import for making HTTP requests
 import googlemaps # Add this line
 from datetime import datetime, timedelta # Add this line
+import os
+
+
 
 from geopy.distance import geodesic
 
@@ -609,4 +612,5 @@ def server_error(e):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True,port=5004)
+    port = int(os.environ.get('PORT', 5000))  
+    app.run(host='0.0.0.0', port=port)
