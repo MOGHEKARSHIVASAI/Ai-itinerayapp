@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TripPlan - Trip Preferences</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Additional styles */
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            margin-right: 20px;
+        }
+        
+        .nav-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 15px;
+            background-color: #4285f4;
+            color: white;
+            border-radius: 20px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-btn:hover {
+            background-color: #3367d6;
+            transform: translateY(-2px);
+        }
+        
+        .active-nav {
+            background-color: #34a853;
+        }
+        
+        .light-theme .nav-btn {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 120px;
+            background-color: rgba(0,0,0,0.8);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .progress-bar {
+            height: 5px;
+            width: 0%;
+            background-color: #4285f4;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            transition: width 0.3s ease;
+        }
+        
+        .interest-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .interest-tag {
+            background-color: rgba(66, 133, 244, 0.2);
+            color: var(--text-color);
+            padding: 5px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .interest-tag.selected {
+            background-color: #4285f4;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar" id="progress-bar"></div>
+    <div class="container">
+        <header class="animate__animated animate__fadeIn">
+            <div class="logo">
+                <a href="{{ url_for('home') }}">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <span>TripPlan AI</span>
+                </a>
+            </div>
+            
+            <div class="nav-links animate__animated animate__fadeIn">
+                <a href="{{ url_for('home') }}" class="nav-btn">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </a>
+              
+                <a href="{{ url_for('profile') }}" class="nav-btn">
+                    <i class="fas fa-user-circle"></i>
+                    <span>Profile</span>
+                </a>
+            </div>
+            
+            <div class="theme-switch">
+                <input type="checkbox" id="theme-toggle" checked>
+                <label for="theme-toggle" class="slider round">
+                    <i class="fas fa-moon"></i>
+                    <i class="fas fa-sun"></i>
+                </label>
+            </div>
+        </header>
+
+        <main class="form-container animate__animated animate__fadeIn">
+            <div class="form-card">
+                <h2 class="form-title animate__animated animate__fadeInDown">Tell Us About Your Trip</h2>
+                <p class="form-subtitle animate__animated animate__fadeIn animate__delay-1s">We'll create a personalized itinerary just for you</p>
+
+                <form id="trip-form" method="POST" class="animate__animated animate__fadeInUp animate__delay-1s">
+                    <div class="form-group">
+                        <label for="place">
+                            <i class="fas fa-map-marker-alt"></i>
+                            Destination
+                        </label>
+                        <input 
+                            type="text" 
+                            id="place" 
+                            name="place" 
+                            placeholder="Enter city or country" 
+                            required
+                            autocomplete="off"
+                            class="input-field">
+                        <div class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltiptext">Enter a specific destination for better results</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="days">
+                            <i class="fas fa-calendar-alt"></i>
+                            Duration (days)
+                        </label>
+                        <input 
+                            type="number" 
+                            id="days" 
+                            name="days" 
+                            min="1" 
+                            max="30" 
+                            value="3" 
+                            required
+                            class="input-field">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="budget">
+                            <i class="fas fa-wallet"></i>
+                            Budget
+                        </label>
+                        <select id="budget" name="budget" required class="select-field">
+                            <option value="low">Budget-friendly</option>
+                            <option value="moderate" selected>Moderate</option>
+                            <option value="luxurious">Luxurious</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="group_type">
+                            <i class="fas fa-users"></i>
+                            Who's Traveling?
+                        </label>
+                        <select id="group_type" name="group_type" required class="select-field">
+                            <option value="solo">Solo Traveler</option>
+                            <option value="couple">Couple</option>
+                            <option value="family">Family</option>
+                            <option value="friends" selected>Friends</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-heart"></i>
+                            Interests (optional)
+                        </label>
+                        <div class="interest-tags">
+                            <div class="interest-tag" data-value="food">Food & Dining</div>
+                            <div class="interest-tag" data-value="culture">Culture & Arts</div>
+                            <div class="interest-tag" data-value="adventure">Adventure</div>
+                            <div class="interest-tag" data-value="history">History</div>
+                            <div class="interest-tag" data-value="nature">Nature</div>
+                            <div class="interest-tag" data-value="nightlife">Nightlife</div>
+                        </div>
+                        <input type="hidden" name="interests" id="interests-input">
+                    </div>
+
+                    <div class="loading-animation" id="loading-animation">
+                        <div class="globe">
+                            <div class="globe-sphere">
+                                <div class="equator"></div>
+                                <div class="meridian"></div>
+                                <div class="meridian" style="transform: rotateY(30deg)"></div>
+                                <div class="meridian" style="transform: rotateY(60deg)"></div>
+                                <div class="meridian" style="transform: rotateY(90deg)"></div>
+                            </div>
+                            <div class="plane"></div>
+                        </div>
+                        <p>Planning your dream trip...</p>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full animate__animated animate__pulse animate__infinite">
+                        <span>Generate Itinerary</span>
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+
+            <div class="features-card animate__animated animate__fadeInRight animate__delay-2s">
+                <h3>Why Use TripPlan AI?</h3>
+                <ul class="features-list">
+                    <li>
+                        <i class="fas fa-clock"></i>
+                        <span>Save time on research</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Discover hidden gems</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-globe"></i>
+                        <span>Local recommendations</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-map"></i>
+                        <span>Interactive map views</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-sliders-h"></i>
+                        <span>Customize to your preferences</span>
+                    </li>
+                </ul>
+                
+                <div class="user-testimonial">
+                    <p>"This app made planning my Paris trip so easy! Saved me hours of research time."</p>
+                    <div class="rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <span class="testimonial-author">- Sarah T.</span>
+                </div>
+            </div>
+        </main>
+
+        <footer class="animate__animated animate__fadeIn animate__delay-3s">
+            <p>&copy; 2025 TripPlan AI. Powered by advanced algorithms.</p>
+            <div class="footer-links">
+                <a href="#">Terms</a>
+                <a href="#">Privacy</a>
+                <a href="#">Support</a>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Show loading animation on form submit
+        document.getElementById('trip-form').addEventListener('submit', function() {
+            document.getElementById('loading-animation').style.display = 'flex';
+            // Disable the submit button to prevent multiple submissions
+            document.querySelector('button[type="submit"]').disabled = true;
+            
+            // Animate progress bar
+            animateProgressBar();
+        });
+
+        // Theme toggle
+        document.getElementById('theme-toggle').addEventListener('change', function() {
+            document.body.classList.toggle('light-theme');
+        });
+
+        // Stop infinite animation after a few seconds
+        setTimeout(function() {
+            document.querySelector('.btn-primary').classList.remove('animate__infinite');
+        }, 3000);
+        
+        // Interest tags functionality
+        const interestTags = document.querySelectorAll('.interest-tag');
+        const interestsInput = document.getElementById('interests-input');
+        const selectedInterests = [];
+        
+        interestTags.forEach(tag => {
+            tag.addEventListener('click', function() {
+                const value = this.getAttribute('data-value');
+                if (this.classList.contains('selected')) {
+                    this.classList.remove('selected');
+                    const index = selectedInterests.indexOf(value);
+                    if (index > -1) {
+                        selectedInterests.splice(index, 1);
+                    }
+                } else {
+                    this.classList.add('selected');
+                    selectedInterests.push(value);
+                }
+                interestsInput.value = selectedInterests.join(',');
+            });
+        });
+        
+        // Animate progress bar
+        function animateProgressBar() {
+            const progressBar = document.getElementById('progress-bar');
+            let width = 0;
+            const interval = setInterval(frame, 30);
+            
+            function frame() {
+                if (width >= 90) {
+                    clearInterval(interval);
+                } else {
+                    width++;
+                    progressBar.style.width = width + '%';
+                }
+            }
+        }
+        
+        // Destination autocomplete suggestion
+        const destinationInput = document.getElementById('place');
+        const popularDestinations = [
+            "Paris, France", 
+            "Tokyo, Japan", 
+            "New York, USA", 
+            "Rome, Italy", 
+            "Bali, Indonesia",
+            "London, UK",
+            "Barcelona, Spain"
+        ];
+        
+        destinationInput.addEventListener('focus', function() {
+            // Create and show suggestions in a real implementation
+            // This is just a placeholder for the functionality
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TripPlan - {{ place }} Itinerary</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    </head>
+<body>
+    <div class="container">
+        <header class="animate__animated animate__fadeIn">
+            <div class="logo">
+                <a href="{{ url_for('home') }}">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <span>TripPlan AI</span>
+                </a>
+            </div>
+            <div class="nav-links animate__animated animate__fadeIn">
+                <a href="{{ url_for('home') }}" class="nav-btn">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </a>
+              
+                <a href="{{ url_for('profile') }}" class="nav-btn">
+                    <i class="fas fa-user-circle"></i>
+                    <span>Profile</span>
+                </a>
+            </div>
+            <div class="theme-switch">
+                <input type="checkbox" id="theme-toggle" checked>
+                <label for="theme-toggle" class="slider round">
+                    <i class="fas fa-moon"></i>
+                    <i class="fas fa-sun"></i>
+                </label>
+            </div>
+        </header>
+
+        <main class="itinerary-container">
+            <div class="itinerary-header animate__animated animate__fadeIn">
+                <h1>Your {{ days }}-Day Trip to {{ place }}</h1>
+                <div class="itinerary-actions">
+                    <button id="print-btn" class="btn btn-secondary">
+                        <i class="fas fa-print"></i>
+                        <span>Print</span>
+                    </button>
+                    <a href="{{ url_for('questionnaire') }}" class="btn btn-secondary">
+                        <i class="fas fa-edit"></i>
+                        <span>Start Over</span>
+                    </a>
+                    <form action="{{ url_for('save_itinerary') }}" method="POST" style="display: inline;">
+                        <button type="submit" class="btn btn-primary" id="save-itinerary-btn">
+                            <i class="fas fa-save"></i>
+                            <span>Save Itinerary</span>
+                        </button>
+                    </form>
+                    <button id="toggle-traffic-btn" class="btn btn-secondary">
+                        <i class="fas fa-traffic-light"></i>
+                        <span>Hide Traffic</span>
+                    </button>
+                    <a class="btn btn-secondary" href="{{ url_for('directions') }}?lat={{ lat }}&lng={{ lng }}&name={{ place }}">
+    <i class="fas fa-route"></i>
+    <span>View Route Overview</span>
+</a>
+
+
+                </div>
+            </div>
+            
+
+            <div class="itinerary-content">
+                <div class="map-wrapper animate__animated animate__fadeIn animate__delay-1s">
+                    <div id="map"></div>
+                    <div class="map-legend">
+                        <div class="legend-item">
+                            <span class="day-marker day-1"></span>
+                            <span>Day 1</span>
+                        </div>
+                        {% if days > 1 %}
+                        <div class="legend-item">
+                            <span class="day-marker day-2"></span>
+                            <span>Day 2</span>
+                        </div>
+                        {% endif %}
+                        {% if days > 2 %}
+                        <div class="legend-item">
+                            <span class="day-marker day-3"></span>
+                            <span>Day 3</span>
+                        </div>
+                        {% endif %}
+                        {% if days > 3 %}
+                        <div class="legend-item">
+                            <span class="day-marker day-more"></span>
+                            <span>More Days</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="itinerary-days">
+                    <div class="tabs animate__animated animate__fadeIn">
+                        {% for day, spots in itinerary.items() %}
+                        <button class="tab-btn {% if loop.first %}active{% endif %}" data-day="{{ day }}">
+                            {{ day }}
+                        </button>
+                        {% endfor %}
+                    </div>
+
+                    <div class="day-content-container animate__animated animate__fadeIn animate__delay-1s">
+                        {% for day, spots in itinerary.items() %}
+                        <div class="day-content {% if loop.first %}active{% endif %}" id="{{ day|replace(' ', '-')|lower }}">
+                            <h2>{{ day }} in {{ place }}</h2>
+                            
+                            <ul class="places-list">
+                                {% for spot in spots %}
+                                <li class="place-card animate__animated animate__fadeInUp" data-location="{{ spot.location.lat }},{{ spot.location.lng }}" data-name="{{ spot.name }}">
+                                    <div class="place-image">
+                                        {% if spot.photo_url %}
+                                            <img src="{{ spot.photo_url }}" alt="{{ spot.name }}">
+                                        {% else %}
+                                            <div class="image-placeholder">
+                                                <i class="fas fa-map-pin"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="place-details">
+                                        <h3>{{ spot.name }}</h3>
+                                        <div class="place-meta">
+                                            <span class="rating">
+                                                <i class="fas fa-star"></i>
+                                                {{ spot.rating|float|round(1) }}
+                                            </span>
+                                            <span class="price">
+                                                {% for i in range(spot.price_level|default(1)|int) %}
+                                                    <i class="fas fa-dollar-sign"></i>
+                                                {% endfor %}
+                                            </span>
+                                        </div>
+                                        <p class="address">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                            {{ spot.address }}
+                                        </p>
+                                        {% if spot.website %}
+                                        <a href="{{ spot.website }}" target="_blank" class="website">
+                                            <i class="fas fa-globe"></i>
+                                            Website
+                                        </a>
+                                        {% endif %}
+                                        <button class="highlight-on-map" data-lat="{{ spot.location.lat }}" data-lng="{{ spot.location.lng }}" data-name="{{ spot.name }}">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                            Show on map
+                                        </button>
+                                        <button class="get-directions-btn" onclick="showTransportOptions({{ spot.location.lat }}, {{ spot.location.lng }}, '{{ spot.name }}')">
+                                            <i class="fas fa-route"></i> Get Directions
+                                        </button>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="itinerary-tips animate__animated animate__fadeIn animate__delay-2s">
+                    <h3><i class="fas fa-lightbulb"></i> Travel Tips for {{ place }}</h3>
+                    <ul class="tips-list">
+                        <li>
+                            <i class="fas fa-clock"></i>
+                            <span>Best time to visit attractions is early morning or late afternoon to avoid crowds</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-utensils"></i>
+                            <span>Try local cuisine at small, family-owned restaurants for authentic flavors</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-bus"></i>
+                            <span>Public transportation is often the most efficient way to get around</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-camera"></i>
+                            <span>Don't forget to capture memories at these beautiful locations</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="weather-info animate__animated animate__fadeIn animate__delay-2s">
+                    <h3><i class="fas fa-cloud-sun"></i> Current Weather in {{ place }}</h3>
+                    <div class="weather-details" id="weather-display">
+                        <p>Loading weather...</p>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <footer class="animate__animated animate__fadeIn animate__delay-3s">
+            <p>&copy; 2025 TripPlan AI. Powered by advanced algorithms.</p>
+        </footer>
+    </div>
+
+    <div id="transportModal" class="transport-modal">
+        <div class="transport-modal-content">
+            <span class="close-button" onclick="document.getElementById('transportModal').style.display='none'">&times;</span>
+            <h3 id="modalDestinationName">Transportation Options to:</h3>
+            <div id="transportOptionsContent">
+                <p>Loading...</p>
+            </div>
+        </div>
+    </div>
+    <script>
+        let map;
+        let markers = [];
+        let activeInfoWindow = null;
+        let trafficLayer;
+        let directionsService; // Declare directionsService
+        let directionsRenderer; // Declare directionsRenderer
+
+        const markerColors = {
+            'Day 1': '#FF5252',
+            'Day 2': '#4CAF50',
+            'Day 3': '#2196F3',
+            'Day 4': '#FFC107',
+            'Day 5': '#9C27B0',
+            'Day 6': '#00BCD4',
+            'Day 7': '#FF9800',
+            'default': '#757575'
+        };
+
+        // Global variable to store the last visited place's coordinates for directions
+        let lastVisitedPlaceCoords = { lat: {{ lat }}, lng: {{ lng }} }; 
+
+        function initMap() {
+            const cityCenter = { lat: {{ lat }}, lng: {{ lng }} };
+            map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 12,
+                center: cityCenter,
+                mapTypeId: "roadmap",
+                styles: [
+                    { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+                    { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+                    { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+                    {
+                        featureType: "administrative.locality",
+                        elementType: "labels.text.fill",
+                        stylers: [{ color: "#d59563" }],
+                    },
+                    {
+                        featureType: "poi",
+                        elementType: "labels.text.fill",
+                        stylers: [{ color: "#d59563" }],
+                    },
+                    {
+                        featureType: "poi.park",
+                        elementType: "geometry",
+                        stylers: [{ color: "#263c3f" }],
+                    },
+                    {
+                        featureType: "poi.park",
+                        elementType: "labels.text.fill",
+                        stylers: [{ color: "#6b9a76" }],
+                    },
+                    {
+                        featureType: "road",
+                        elementType: "geometry",
+                        stylers: [{ color: "#38414e" }],
+                    },
+                    {
+                        featureType: "road",
+                        elementType: "geometry.stroke",
+                        stylers: [{ color: "#212a37" }],
+                    },
+                    {
+                        featureType: "road",
+                        elementType: "labels.text.fill",
+                        stylers: [{ color: "#9ca5b3" }],
+                    },
+                    {
+                        featureType: "road.highway",
+                        elementType: "geometry",
+                        stylers: [{ color: "#746855" }],
+                    },
+                    {
+                        featureType: "road.highway",
+                        elementType: "geometry.stroke",
+                        stylers: [{ color: "#1f2835" }],
+                    },
+                    {
+                        featureType: "road.highway",
+                        elementType: "labels.text.fill",
+                        stylers: [{ color: "#f3d19c" }],
+                    },
+                    {
+                        featureType: "transit",
+                        elementType: "geometry",
+                        stylers: [{ color: "#2f3948" }],
+                    },
+                    {
+                        featureType: "transit.station",
+                        elementType: "labels.text.fill",
+                        stylers: [{ color: "#d59563" }],
+                    },
+                    {
+                        featureType: "water",
+                        elementType: "geometry",
+                        stylers: [{ color: "#17263c" }],
+                    },
+                    {
+                        featureType: "water",
+                        elementType: "labels.text.fill",
+                        stylers: [{ color: "#515c6d" }],
+                    },
+                    {
+                        featureType: "water",
+                        elementType: "labels.text.stroke",
+                        stylers: [{ color: "#17263c" }],
+                    },
+                ],
+            });
+
+            // Add traffic layer
+            trafficLayer = new google.maps.TrafficLayer();
+            trafficLayer.setMap(map);
+
+            // Initialize Directions Service and Renderer
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer({ map: map });
+
+
+            // Fetch and display weather
+            fetchWeather(cityCenter.lat, cityCenter.lng);
+
+            // Add markers for all places in the itinerary
+            {% for day, places_on_day in itinerary.items() %}
+                {% for place in places_on_day %}
+                    addMarker(
+                        {
+                            lat: {{ place.location.lat }}, 
+                            lng: {{ place.location.lng }}
+                        }, 
+                        "{{ place.name }}", 
+                        "{{ place.address }}", 
+                        {{ place.rating|default(0)|float }},
+                        "{{ day }}"
+                    );
+                {% endfor %}
+            {% endfor %}
+            
+            // Set bounds to include all markers
+            if (markers.length > 0) {
+                const bounds = new google.maps.LatLngBounds();
+                markers.forEach(marker => bounds.extend(marker.getPosition()));
+                map.fitBounds(bounds);
+                // Adjust zoom if too zoomed in
+                google.maps.event.addListenerOnce(map, 'bounds_changed', function() {
+                    if (map.getZoom() > 15) {
+                        map.setZoom(15);
+                    }
+                });
+            }
+        }
+
+        function addMarker(position, name, address, rating, day) {
+            const markerColor = markerColors[day] || markerColors.default;
+            
+            const marker = new google.maps.Marker({
+                position: position,
+                map: map,
+                title: name,
+                animation: google.maps.Animation.DROP,
+                day: day,
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    fillColor: markerColor,
+                    fillOpacity: 0.9,
+                    strokeWeight: 1,
+                    strokeColor: '#FFFFFF',
+                    scale: 10
+                }
+            });
+
+            const infoWindow = new google.maps.InfoWindow({
+                content: `
+                    <div class="map-info-window" style="padding: 10px; max-width: 200px;">
+                        <h3 style="margin: 0 0 5px 0; font-size: 16px;">${name}</h3>
+                        <p style="margin: 0 0 5px 0; font-weight: bold; color: ${markerColor};">${day}</p>
+                        <p style="margin: 0 0 5px 0; font-size: 12px;">${address}</p>
+                        <div style="display: flex; align-items: center;">
+                            <span style="margin-right: 5px;">${rating}</span>
+                            <span style="color: #f39c12;">★</span>
+                        </div>
+                    </div>
+                `
+            });
+
+            marker.addListener('click', () => {
+                if (activeInfoWindow) {
+                    activeInfoWindow.close();
+                }
+                infoWindow.open(map, marker);
+                activeInfoWindow = infoWindow;
+                
+                marker.setAnimation(google.maps.Animation.BOUNCE);
+                setTimeout(() => {
+                    marker.setAnimation(null);
+                }, 750);
+                
+                const placeCards = document.querySelectorAll('.place-card');
+                placeCards.forEach(card => {
+                    card.classList.remove('highlighted');
+                    if (card.getAttribute('data-name') === name) {
+                        card.classList.add('highlighted');
+                        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                });
+            });
+            
+            markers.push(marker);
+            return marker;
+        }
+
+        // Fetch Weather Data
+        async function fetchWeather(lat, lng) {
+            const weatherDisplay = document.getElementById('weather-display');
+            try {
+                const response = await fetch(`/api/weather?lat=${lat}&lng=${lng}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const weatherData = await response.json();
+                
+                if (weatherData.error) {
+                    weatherDisplay.innerHTML = `<p style="color: red;">${weatherData.error}</p>`;
+                    return;
+                }
+
+                weatherDisplay.innerHTML = `
+                    <img src="${weatherData.icon_url}" alt="${weatherData.description}">
+                    <p>${weatherData.temperature}°C</p>
+                    <p>${weatherData.description}</p>
+                `;
+            } catch (error) {
+                console.error("Error fetching weather:", error);
+                weatherDisplay.innerHTML = `<p style="color: red;">Failed to load weather data.</p>`;
+            }
+        }
+
+        // Function to fetch and display transportation options and render directions on map
+        async function showTransportOptions(destinationLat, destinationLng, destinationName) {
+            const modal = document.getElementById('transportModal');
+            const modalDestinationName = document.getElementById('modalDestinationName');
+            const transportOptionsContent = document.getElementById('transportOptionsContent');
+
+            modalDestinationName.textContent = `Transportation Options to: ${destinationName}`;
+            transportOptionsContent.innerHTML = '<p>Loading transportation options...</p>';
+            modal.style.display = 'block';
+
+            const originLat = lastVisitedPlaceCoords.lat;
+            const originLng = lastVisitedPlaceCoords.lng;
+
+            if (!originLat || !originLng) {
+                transportOptionsContent.innerHTML = '<p>Could not determine starting point for directions.</p>';
+                return;
+            }
+
+            // Clear previous directions from the map
+            directionsRenderer.setDirections({ routes: [] });
+
+            try {
+                const response = await fetch(`/api/directions?origin_lat=${originLat}&origin_lng=${originLng}&destination_lat=${destinationLat}&destination_lng=${destinationLng}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+
+                let content = '<h4>Available Modes:</h4>';
+
+                if (data.driving && data.driving.duration_text) {
+                    content += `<p><strong>Driving:</strong> Duration: ${data.driving.duration_text} (${data.driving.distance_text})</p>`;
+                    if (data.driving.duration_in_traffic_text) {
+                        content += `<p style="margin-left: 20px;"><em>Current Traffic: ${data.driving.duration_in_traffic_text}</em></p>`;
+                    }
+                    // Request Google Maps Directions API directly for route rendering on map
+                    directionsService.route(
+                        {
+                            origin: { lat: originLat, lng: originLng },
+                            destination: { lat: destinationLat, lng: destinationLng },
+                            travelMode: google.maps.TravelMode.DRIVING,
+                        },
+                        (response, status) => {
+                            if (status === "OK") {
+                                directionsRenderer.setDirections(response);
+                            } else {
+                                console.error('Directions API error for map rendering:', status);
+                            }
+                        }
+                    );
+                } else {
+                    content += `<p><strong>Driving:</strong> ${data.driving ? (data.driving.status || 'No route found') : 'No data'}</p>`;
+                }
+
+                // Add other modes from the API response if needed (walking, transit)
+                if (data.walking && data.walking.duration_text) {
+                    content += `<p><strong>Walking:</strong> Duration: ${data.walking.duration_text} (${data.walking.distance_text})</p>`;
+                } else {
+                    content += `<p><strong>Walking:</strong> ${data.walking ? (data.walking.status || 'No route found') : 'No data'}</p>`;
+                }
+
+                if (data.transit && data.transit.duration_text) {
+                    content += `<p><strong>Transit:</strong> Duration: ${data.transit.duration_text} (${data.transit.distance_text})</p>`;
+                } else {
+                    content += `<p><strong>Transit:</strong> ${data.transit ? (data.transit.status || 'No route found') : 'No data'}</p>`;
+                }
+
+                transportOptionsContent.innerHTML = content;
+
+                // Update lastVisitedPlaceCoords to the current destination for the next query
+                lastVisitedPlaceCoords = { lat: destinationLat, lng: destinationLng };
+
+            } catch (error) {
+                console.error('Error fetching transportation options:', error);
+                transportOptionsContent.innerHTML = '<p>Failed to load transportation options. Please try again.</p>';
+            }
+        }
+
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.day-content').forEach(content => content.classList.remove('active'));
+                
+                button.classList.add('active');
+                const day = button.getAttribute('data-day');
+                document.getElementById(day.replace(' ', '-').toLowerCase()).classList.add('active');
+                
+                markers.forEach(marker => {
+                    if (marker.day === day) {
+                        marker.setAnimation(google.maps.Animation.BOUNCE);
+                        setTimeout(() => {
+                            marker.setAnimation(null);
+                        }, 750);
+                    }
+                });
+            });
+        });
+        
+        // Show on map button functionality
+        document.querySelectorAll('.highlight-on-map').forEach(button => {
+            button.addEventListener('click', function() {
+                const lat = parseFloat(this.getAttribute('data-lat'));
+                const lng = parseFloat(this.getAttribute('data-lng'));
+                const name = this.getAttribute('data-name');
+                
+                const position = new google.maps.LatLng(lat, lng);
+                map.panTo(position);
+                map.setZoom(16);
+                
+                markers.forEach(marker => {
+                    if (marker.getTitle() === name) {
+                        google.maps.event.trigger(marker, 'click');
+                    }
+                });
+            });
+        });
+        
+        // Save Itinerary functionality
+        document.getElementById('save-itinerary-btn').addEventListener('click', async function() {
+            try {
+                const response = await fetch('{{ url_for('save_itinerary') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert('Itinerary saved!');
+                    window.location.href = '{{ url_for('profile') }}';
+                } else {
+                    alert('Failed to save itinerary: ' + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error saving itinerary:', error);
+                alert('An error occurred while saving the itinerary.');
+            }
+        });
+        
+        // Print functionality
+        document.getElementById('print-btn').addEventListener('click', function() {
+            window.print();
+        });
+        
+        // Theme toggle
+        document.getElementById('theme-toggle').addEventListener('change', function() {
+            document.body.classList.toggle('light-theme');
+        });
+
+        // Toggle Traffic Layer functionality
+        document.getElementById('toggle-traffic-btn').addEventListener('click', function() {
+            if (trafficLayer.getMap()) {
+                trafficLayer.setMap(null); // Hide traffic layer
+                this.querySelector('span').textContent = 'Show Traffic';
+                this.querySelector('i').classList.replace('fa-traffic-light', 'fa-eye');
+            } else {
+                trafficLayer.setMap(map); // Show traffic layer
+                this.querySelector('span').textContent = 'Hide Traffic';
+                this.querySelector('i').classList.replace('fa-eye', 'fa-traffic-light');
+            }
+        });
+    </script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}&callback=initMap"></script>
+</body>
+</html>
